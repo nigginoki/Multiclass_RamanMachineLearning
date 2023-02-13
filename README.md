@@ -16,8 +16,8 @@ After downloading this tool, first adjust the contents of `raman_ml.conf` accord
 | `SCORING` | Performance metrics to be calculated during cross-validation |
 | `CONDA_DIR` | Directory of your *conda* installation |
 | `ENV_NAME` | Name that will be used for the *conda* environment |
-| `DIR1`/`DIR2` | Directories where the individual spectra are stored |
-| `LAB1`/`LAB2` | Class labels corresponding to `DIR1`/`DIR2` |
+| `DIR1`/`DIR2`/`DIR3` | Directories where the individual spectra are stored |
+| `LAB1`/`LAB2`/`LAB3` | Class labels corresponding to `DIR1`/`DIR2` |
 
 ### QC/Preprocessing Parameters
 | Parameter | Description |
