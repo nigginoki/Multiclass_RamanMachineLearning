@@ -58,8 +58,8 @@ do
         then
             # Create dataset from individual spectra
             python ./src/01_create_dataset.py \
-            -d $DIR1 $DIR2 $DIR3 \
-            -l $LAB1 $LAB2 $LAB3 \
+            -d $DIR1 $DIR2 $DIR3 $DIR4\
+            -l $LAB1 $LAB2 $LAB3 $LAB4\
             -o "$DATASET_OUT"
 
         elif [ "${REPLY}" == 2 ]
@@ -115,8 +115,8 @@ do
         then
             # Create dataset
             python ./src/01_create_dataset.py \
-            -d $DIR1 $DIR2 $DIR3 \
-            -l $LAB1 $LAB2 $LAB3 \
+            -d $DIR1 $DIR2 $DIR3 $DIR4\
+            -l $LAB1 $LAB2 $LAB3 $DIR4\
             -o "$DATASET_OUT"
 
             # Quality control
