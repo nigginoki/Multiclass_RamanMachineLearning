@@ -144,7 +144,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             self.shap_results_ = np.empty(self.n_trials, dtype=object)
 
     def _get_cv(self, random_state=None):
-
+        
         if is_classifier(self.estimator):
             # StratifiedKFold to preserve class percentages
             outer_cv = StratifiedKFold(
