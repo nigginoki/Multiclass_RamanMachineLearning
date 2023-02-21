@@ -19,7 +19,6 @@ from .misc import mode
 
 cv_logger = logging.getLogger(__name__)
 
-# edit scoring f1_micro/f1_macro
 
 class CrossValidator(BaseEstimator, MetaEstimatorMixin):
     def __init__(
@@ -87,6 +86,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
                                             n_jobs=ct_jobs,
                                             verbose=self.verbose)
             cv_logger.debug("Cross testing complete. Storing results...")
+            
             self._store_ct_results(X, y, i,
                                    outer_cv,
                                    dummy_results,
@@ -228,14 +228,17 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             X_train, X_test = X[train], X[test]
 
             current_estimator = ct_results_tmp["estimator"][j]
-
+            
             if self.do_gs:
                 current_estimator = current_estimator.best_estimator_
 
             if self.coef_func:
                 cv_logger.debug("Storing coefficients")
-                coef_tmp[j,:] = self.coef_func(current_estimator).squeeze()
-
+                try:
+                    coef_tmp[j,:] = self.coef_func(current_estimator).squeeze()
+                except ValueError:
+                    pass
+                
             cv_logger.debug("Storing predictions")
             y_pred = current_estimator.predict(X_test)
             self.predictions_["y_pred"][i, test] = y_pred

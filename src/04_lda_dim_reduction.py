@@ -24,7 +24,6 @@ from raman_lib.preprocessing import PeakPicker
 logger = logging.getLogger()
 logger.setLevel(logging.DEBUG)
 
-
 logdir  = Path("./log/04_lda_dim_reduction/")
 
 if not os.path.exists(logdir):
@@ -47,7 +46,6 @@ handler_f.setFormatter(format_f)
 
 logger.addHandler(handler_c)
 logger.addHandler(handler_f)
-
 
 def parse_args():
     parser = argparse.ArgumentParser(
@@ -129,7 +127,7 @@ if __name__ == "__main__":
                         n_trials=args.trials,
                         n_jobs=args.jobs
                         ).fit(X, y)
-
+    
     cv.to_csv(lda_path_out)
     logger.info("Cross validation complete")
 
