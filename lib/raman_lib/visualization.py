@@ -356,7 +356,8 @@ def plot_roc_curve(conf_scores, y, label, ax=None):
     ax.plot([0, 1], [0, 1], color="k", linestyle="--")
 
     for row in conf_scores:
-        fpr, tpr, _ = roc_curve(y, row)
+        fpr, tpr, _ = roc_auc_curve(y, rowmulti_class="ovr",
+        average="micro")
         ax.plot(fpr, tpr, color="k", alpha=0.2, linewidth=1)
         aucs.append(auc(fpr, tpr))
         tpr_interp = np.interp(mean_fpr, fpr, tpr)
