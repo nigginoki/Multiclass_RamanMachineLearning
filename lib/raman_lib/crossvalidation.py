@@ -19,7 +19,6 @@ from .misc import mode
 
 cv_logger = logging.getLogger(__name__)
 
-
 class CrossValidator(BaseEstimator, MetaEstimatorMixin):
     def __init__(
         self,
@@ -31,10 +30,9 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         explainer=False,
         n_folds=5,
         n_trials=20,
-        n_jobs=-1,
+        n_jobs=1,
         verbose=0,
-        feature_names=None,
-        n_classes = None
+        feature_names=None    
     ):
         cv_logger.debug("Creating instance of CrossValidator")
         self.estimator = estimator
@@ -48,9 +46,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         self.n_jobs = n_jobs
         self.verbose = verbose
         self.feature_names = feature_names
-        self.n_classes = n_classes
 
-        
     def fit(self, X, y=None):
 
         self.do_gs = bool(self.param_grid)
@@ -89,9 +85,11 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
                                             n_jobs=ct_jobs,
                                             verbose=self.verbose)
             cv_logger.debug("Cross testing complete. Storing results...")
-            
-            self._store_ct_results(X, y, i, outer_cv, dummy_results, ct_results_tmp)
-            
+            self._store_ct_results(X, y, i,
+                                   outer_cv,
+                                   dummy_results,
+                                   ct_results_tmp)
+
         if self.explainer:
             cv_logger.debug("Storing SHAP results")
             self.shap_results_ = self.shap_results_.mean()
@@ -122,8 +120,8 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         return self.estimator_.score(X, y)
 
     def _prep_results(self, X, y):
+        #num_classes = len(np.unique(y))
         
-        self.n_classes = self.n_classes if self.n_classes else len(np.unique(y))
         if self.do_gs:
             cv_logger.debug("Creating arrays for grid search results")
             self.param_results_ = defaultdict(list)
@@ -131,7 +129,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             for param in ParameterGrid(self.param_grid):
                 for name, val in param.items():
                     self.cv_results_[f"param_{name}"].append(val)
-
+        
         cv_logger.debug("Creating arrays for cross testing results")
         self.ct_results_ = defaultdict(list)
         self.predictions_ = defaultdict(
@@ -139,16 +137,16 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
         if self.coef_func:
             cv_logger.debug("Creating array for model coefficients")
-            n_classes = self.n_classes if self.n_classes else len(np.unique(y))
-            self.coefs_ = np.zeros((self.n_folds, X.shape[1], n_classes))
+            self.coefs_ = np.zeros((self.n_trials, X.shape[1]))
+            #self.coefs_ = np.zeros((num_classes, self.n_trials, X.shape[1]))
 
+            print("self.coefs_:",self.coefs_.shape)
         if self.explainer:
             cv_logger.debug("Creating array for SHAP explanations")
             self.shap_results_ = np.empty(self.n_trials, dtype=object)
 
-
     def _get_cv(self, random_state=None):
-        
+
         if is_classifier(self.estimator):
             # StratifiedKFold to preserve class percentages
             outer_cv = StratifiedKFold(
@@ -208,6 +206,8 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
 
     def _store_ct_results(self, X, y, i, outer_cv, dummy_results, ct_results_tmp):
+        #num_classes = len(np.unique(y))
+
         if self.multi_score:
             for score in self.scoring:
                 self.ct_results_[f"train_{score}"].append(ct_results_tmp[f"train_{score}"].mean())
@@ -220,8 +220,10 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         self.ct_results_[f"predict_time"].append(ct_results_tmp["score_time"].mean())
 
         if self.coef_func:
-            coef_tmp = np.zeros((self.n_folds, X.shape[1], len(np.unique(y))))
-            
+            coef_tmp = np.zeros((self.n_folds, X.shape[1]))
+            #coef_tmp = np.zeros((num_classes, self.n_folds, X.shape[1]))
+
+            print("coef_tmp:",coef_tmp.shape)
         if self.explainer:
             shap_vals = np.zeros((len(y), X.shape[1]))
             shap_base_vals = np.zeros(len(y))
@@ -232,40 +234,27 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             X_train, X_test = X[train], X[test]
 
             current_estimator = ct_results_tmp["estimator"][j]
-            
             if self.do_gs:
                 current_estimator = current_estimator.best_estimator_
 
-        if self.coef_func:
-            n_classes = len(np.unique(y))
-            coef_tmp = np.zeros((self.n_folds, X.shape[1], n_classes))
-            for j, (train, test) in enumerate(outer_cv.split(X, y)):
-                current_estimator = clone(self.estimator)
-                current_estimator.fit(X[train], y[train])
-
-                if self.coef_func:
-                    coefs = self.coef_func(current_estimator)
-                    for c in range(n_classes):
-                        try:
-                            coef_tmp[j, :, c] = coefs[c].squeeze()
-                        except ValueError:
-                            pass
-
+            if self.coef_func:
+                cv_logger.debug("Storing coefficients")
+                print("self.coef_func(current_estimator)", self.coef_func(current_estimator).shape)
+                coef_tmp= self.coef_func(current_estimator).T
                 
+                #print("coef_tmp:",coef_tmp.shape)
+                #print("coef_tmp[j,:]:",coef_tmp[j,:].shape)
+                #print("coef_tmp[j:]:",coef_tmp[j,:].shape)
+
             cv_logger.debug("Storing predictions")
             y_pred = current_estimator.predict(X_test)
             self.predictions_["y_pred"][i, test] = y_pred
-
-            if hasattr(current_estimator, "decision_function"):
-                conf_scores = current_estimator.decision_function(X_test)
-                
-                
-                try:
-                    
+            try:
+                if hasattr(current_estimator, "decision_function"):
+                    conf_scores = current_estimator.decision_function(X_test)
                     self.predictions_["conf_scores"][i, test] = conf_scores
-                except ValueError:
-                    pass
-                
+            except ValueError:
+                pass
             if hasattr(current_estimator, "predict_proba"):
                 proba = current_estimator.predict_proba(X_test)[:,1]
                 self.predictions_["probability"][i, test] = proba
@@ -294,7 +283,8 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
         cv_logger.debug("Averaging results")
         if self.coef_func:
-            self.coefs_[i,:,:] = coef_tmp.mean(axis=0)
+            self.coefs_[i,:] = coef_tmp.mean(axis=0)
+
         if self.explainer:
             self.shap_results_[i] = shap.Explanation(shap_vals,
                                                      base_values=shap_base_vals,

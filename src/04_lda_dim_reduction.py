@@ -49,8 +49,7 @@ logger.addHandler(handler_f)
 
 def parse_args():
     parser = argparse.ArgumentParser(
-        description="Create a single csv file from individual Raman spectra."
-    )
+        description="Create a single csv file from individual Raman spectra.")
 
     parser.add_argument("-f", "--file", metavar="PATH", type=str, action="store",
                         help=".csv file containing the spectral data.", required=True)
