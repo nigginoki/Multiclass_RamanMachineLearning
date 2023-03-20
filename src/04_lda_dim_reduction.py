@@ -100,7 +100,9 @@ if __name__ == "__main__":
     y = np.asarray(data.label)
     y, y_key = pd.factorize(y)
     logger.info("Data import complete")
-
+    
+    print("Number of classes: ", len(np.unique(y)))
+    
     if isinstance(args.scoring, str):
         refit = True
     else:

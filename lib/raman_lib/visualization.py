@@ -5,43 +5,29 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-from IPython.display import display
-from ipywidgets import Button, HBox
+from matplotlib.widgets import Button
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from scipy.signal import find_peaks
 from sklearn.metrics import (auc, confusion_matrix, roc_curve)
 
 
-def plot_spectra_peaks(wns, signal, deriv, peaks, scores, labels=None):
+def plot_spectra_peaks(wns, signal, peaks=None, labels=None, figsize=(8,6)):
 
-    signal = np.asarray(signal)
-    deriv = np.asarray(deriv)
-    fig, (ax1, ax2) = plt.subplots(2,1)
-    #plt.subplots_adjust(bottom=0.2)
+    fig, ax = plt.subplots(figsize=figsize)
+    plt.subplots_adjust(bottom=0.2)
 
+    line, = ax.plot(wns, signal[0, :])
+    if peaks is not None:
+        peakmarks = ax.scatter(wns[peaks[0]], signal[0, :][peaks[0]],
+                            c="red", marker="x", s=50, zorder=3)
     if labels is not None:
-        fig.suptitle(labels[0])
+        ax.set_title(labels[0])
 
-    line1, = ax1.plot(wns, signal[0, :])
-    peakmarks = ax1.scatter(wns[peaks[0]], signal[0, :][peaks[0]],
-                           c="red", marker="x", s=50, zorder=3)
-    score_text = ax1.text(0.01, 0.01, f"Score: {int(scores[0])}", transform=ax1.transAxes)
+    ax.set_xlim(wns[0], wns[-1])
+    ax.grid()
 
-    ax1.set_xlim(wns[0], wns[-1])
-    ax1.grid()
-
-    ax1.set_xlabel("Raman Shift ($\mathregular{cm^{-1}}$)",
+    ax.set_xlabel("Raman Shift ($\mathregular{cm^{-1}}$)",
                   fontdict={"weight": "bold", "size": 12})
-    ax2.set_ylabel("Intensity (-)")
-
-    line2, = ax2.plot(wns, deriv[0,:])
-
-    ax2.set_xlim(wns[0], wns[-1])
-    ax2.grid()
-
-    ax2.set_xlabel("Raman Shift ($\mathregular{cm^{-1}}$)",
-                  fontdict={"weight": "bold", "size": 12})
-    ax2.set_ylabel("1st derivative")
 
     class Index:
         ind = 0
@@ -50,66 +36,53 @@ def plot_spectra_peaks(wns, signal, deriv, peaks, scores, labels=None):
             self.ind += 1
             i = self.ind % len(signal)
             ydata = signal[i, :]
-            line1.set_ydata(ydata)
-
-            marks = np.array([[wns[peak], signal[i][peak]]
-                             for peak in peaks[i]])
-            if len(marks) == 0:
-                peakmarks.set_visible(False)
-            else:
-                peakmarks.set_visible(True)
-                peakmarks.set_offsets(marks)
-            
-            score_text.set_text(f"Score: {int(scores[i])}")
+            line.set_ydata(ydata)
+            if peaks is not None:
+                marks = np.array([[wns[peak], signal[i][peak]]
+                                for peak in peaks[i]])
+                if len(marks) == 0:
+                    peakmarks.set_visible(False)
+                else:
+                    peakmarks.set_visible(True)
+                    peakmarks.set_offsets(marks)
             if labels is not None:
-                fig.suptitle(labels[i])
+                ax.set_title(labels[i])
 
-            ax1.relim()
-            ax1.autoscale_view()
-
-            line2.set_ydata(deriv[i,:])
-            ax2.relim()
-            ax2.autoscale_view()
-
+            ax.relim()
+            ax.autoscale_view()
             plt.draw()
 
         def prev(self, event):
             self.ind -= 1
             i = self.ind % len(signal)
             ydata = signal[i, :]
-            line1.set_ydata(ydata)
-
-            marks = np.array([[wns[peak], signal[i][peak]]
-                             for peak in peaks[i]])
-            if len(marks) == 0:
-                peakmarks.set_visible(False)
-            else:
-                peakmarks.set_visible(True)
-                peakmarks.set_offsets(marks)
-
-            score_text.set_text(f"Score: {int(scores[i])}")
+            line.set_ydata(ydata)
+            
+            if peaks is not None:
+                marks = np.array([[wns[peak], signal[i][peak]]
+                                for peak in peaks[i]])
+                if len(marks) == 0:
+                    peakmarks.set_visible(False)
+                else:
+                    peakmarks.set_visible(True)
+                    peakmarks.set_offsets(marks)
             if labels is not None:
-                fig.suptitle(labels[i])
+                ax.set_title(labels[i])
 
-            ax1.relim()
-            ax1.autoscale_view()
-
-            line2.set_ydata(deriv[i,:])
-            ax2.relim()
-            ax2.autoscale_view()
-
+            ax.relim()
+            ax.autoscale_view()
             plt.draw()
 
     callback = Index()
 
-    bnext = Button(description='Next')
-    bprev = Button(description='Previous')
+    axprev = plt.axes([0.7, 0.05, 0.1, 0.075])
+    axnext = plt.axes([0.81, 0.05, 0.1, 0.075])
 
-    buttons = HBox(children=[bprev, bnext])
-    display(buttons)
+    bnext = Button(axnext, "Next")
+    bprev = Button(axprev, "Prev")
 
-    bnext.on_click(callback.next)
-    bprev.on_click(callback.prev)
+    bnext.on_clicked(callback.next)
+    bprev.on_clicked(callback.prev)
 
     plt.show()
 
@@ -356,8 +329,7 @@ def plot_roc_curve(conf_scores, y, label, ax=None):
     ax.plot([0, 1], [0, 1], color="k", linestyle="--")
 
     for row in conf_scores:
-        fpr, tpr, _ = roc_auc_curve(y, rowmulti_class="ovr",
-        average="micro")
+        fpr, tpr, _ = roc_curve(y, row)
         ax.plot(fpr, tpr, color="k", alpha=0.2, linewidth=1)
         aucs.append(auc(fpr, tpr))
         tpr_interp = np.interp(mean_fpr, fpr, tpr)

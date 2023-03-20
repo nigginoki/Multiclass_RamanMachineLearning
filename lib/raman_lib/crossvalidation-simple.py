@@ -2,7 +2,6 @@ from collections import defaultdict
 import os
 import numpy as np
 import pandas as pd
-import shap
 from mlxtend.evaluate import mcnemar, mcnemar_table
 from sklearn.base import (BaseEstimator, MetaEstimatorMixin, clone, is_classifier)
 from sklearn.dummy import DummyClassifier, DummyRegressor
@@ -13,13 +12,12 @@ from .misc import mode
 
 class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
-    def __init__( self, estimator, param_grid=None, scoring="accuracy", refit=True, coef_func=None, explainer=False, n_folds=5, n_trials=20, n_jobs=1, verbose=0, feature_names=None ):
+    def __init__( self, estimator, param_grid=None, scoring="accuracy", refit=True, coef_func=None, n_folds=5, n_trials=20, n_jobs=1, verbose=0, feature_names=None ):
         self.estimator = estimator
         self.param_grid = param_grid
         self.scoring = scoring
         self.refit = refit
         self.coef_func = coef_func
-        self.explainer = explainer
         self.n_folds = n_folds
         self.n_trials = n_trials
         self.n_jobs = n_jobs
@@ -54,10 +52,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
                                    dummy_results,
                                    ct_results_tmp)
 
-        if self.explainer:
-            self.shap_results_ = self.shap_results_.mean()
-        self._fit_final_estimator(X, y)
-
+        
         return self
 
     def _prep_results(self, X, y):
@@ -74,9 +69,6 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
         if self.coef_func:
             self.coefs_ = np.zeros((self.n_trials, X.shape[1]))
-
-        if self.explainer:
-            self.shap_results_ = np.empty(self.n_trials, dtype=object)
 
     def _get_cv(self, random_state=None):
 
@@ -102,7 +94,6 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
                 DummyRegressor(), X, y, cv=outer_cv)
 
         return dummy_results
-
 
     def _do_gridsearch(self, X, y, cv):
 
@@ -134,7 +125,6 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         for name, val in gridsearch.best_params_.items():
             self.param_results_[name].append(val)
 
-
     def _store_ct_results(self, X, y, i, outer_cv, dummy_results, ct_results_tmp):
         if self.multi_score:
             for score in self.scoring:
@@ -149,10 +139,6 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
         if self.coef_func:
             coef_tmp = np.zeros((self.n_folds, X.shape[1]))
-        if self.explainer:
-            shap_vals = np.zeros((len(y), X.shape[1]))
-            shap_base_vals = np.zeros(len(y))
-            shap_data = np.zeros((len(y), X.shape[1]))
 
         for j, (train, test) in enumerate(outer_cv.split(X, y)):
             X_train, X_test = X[train], X[test]
@@ -173,34 +159,14 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             if hasattr(current_estimator, "predict_proba"):
                 proba = current_estimator.predict_proba(X_test)[:,1]
                 self.predictions_["probability"][i, test] = proba
-
-            if self.explainer:
-                if isinstance(self.estimator, Pipeline):
-                    current_prep = current_estimator[:-1]
-                    current_estimator = current_estimator[-1]
-
-                    X_train = current_prep.transform(X_train)
-                    X_test = current_prep.transform(X_test)
-                explainer = shap.Explainer(current_estimator, X_train)
-
-                shap_tmp = explainer(X_test, check_additivity=False)
-                shap_vals[test, :] = shap_tmp.values
-                shap_base_vals[test] = shap_tmp.base_values
-                shap_data[test, :] = shap_tmp.data
+            
         mcn_table = mcnemar_table(y.ravel(),
                                   dummy_results.ravel(),
                                   self.predictions_["y_pred"][i].ravel())
         _, p_val = mcnemar(mcn_table)
         self.ct_results_["p_value"].append(p_val)
         if self.coef_func:
-            self.coefs_[i,:] = coef_tmp.mean(axis=0)
-
-        if self.explainer:
-            self.shap_results_[i] = shap.Explanation(shap_vals,
-                                                     base_values=shap_base_vals,
-                                                     data=shap_data,
-                                                     feature_names=self.feature_names)
-                                            
+            self.coefs_[i,:] = coef_tmp.mean(axis=0)                                          
     
     def _fit_final_estimator(self, X, y):
         self.estimator_ = clone(self.estimator)
