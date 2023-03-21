@@ -20,7 +20,8 @@ do
     echo "  4: Run LDA with dimensionality reduction"
     echo "  5: Run regularized linear models"
     echo "  6: Run decision-tree-based models"
-    echo "all: Run steps 1-6"
+    echo "  7: Run multiclass classification models"
+    echo "all: Run steps 1-7"
     echo "or enter 'exit' to quit"
 
     read -r -p "Your choice: "
@@ -111,12 +112,22 @@ do
                 --rf-feature-sample "${RF_FEATURE_SAMPLE[@]}" \
                 --gbdt-learning-rate "${GBDT_LEARNING_RATE[@]}"
                 
+        elif [ "${REPLY}" == 7 ]
+        then
+            python ./src/07_more_models.py \
+                -f "$PREP_OUT" -o "$TREE_DIR" \
+                -s "${SCORING[@]}" -t $N_TRIALS \
+                -k $N_FOLDS -j $N_CORES \
+                --tree-alpha "${DT_ALPHA[@]}" \
+                --rf-feature-sample "${RF_FEATURE_SAMPLE[@]}" \
+                --gbdt-learning-rate "${GBDT_LEARNING_RATE[@]}"
+                
         elif [ "${REPLY}" == "all" ]
         then
             # Create dataset
             python ./src/01_create_dataset.py \
-            -d $DIR1 $DIR2 \
-            -l $LAB1 $LAB2 \
+            -d $DIR1 $DIR2 $DIR3 $DIR4\
+            -l $LAB1 $LAB2 $LAB3 $LAB4\
             -o "$DATASET_OUT"
 
             # Quality control

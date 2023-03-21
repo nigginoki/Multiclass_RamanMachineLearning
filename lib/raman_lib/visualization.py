@@ -8,7 +8,7 @@ import seaborn as sns
 from matplotlib.widgets import Button
 from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
 from scipy.signal import find_peaks
-from sklearn.metrics import (auc, confusion_matrix, roc_curve)
+from sklearn.metrics import (auc, confusion_matrix, roc_auc_score)
 
 
 def plot_spectra_peaks(wns, signal, peaks=None, labels=None, figsize=(8,6)):
@@ -329,7 +329,7 @@ def plot_roc_curve(conf_scores, y, label, ax=None):
     ax.plot([0, 1], [0, 1], color="k", linestyle="--")
 
     for row in conf_scores:
-        fpr, tpr, _ = roc_curve(y, row)
+        fpr, tpr, _ = roc_auc_score(y, row)
         ax.plot(fpr, tpr, color="k", alpha=0.2, linewidth=1)
         aucs.append(auc(fpr, tpr))
         tpr_interp = np.interp(mean_fpr, fpr, tpr)

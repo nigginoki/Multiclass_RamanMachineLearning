@@ -252,13 +252,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             y_pred = current_estimator.predict(X_test)
             self.predictions_["y_pred"][i, test] = y_pred
             if hasattr(current_estimator, "decision_function"):
-                
-                
                 conf_scores = current_estimator.decision_function(X_test)[:,1]
-                
-                #print("conf_scores:",conf_scores)
-
-                
                 self.predictions_["conf_scores"][i, test] = conf_scores
             
             if hasattr(current_estimator, "predict_proba"):
@@ -275,8 +269,8 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         self.ct_results_["p_value"].append(p_val)
 
         cv_logger.debug("Averaging results")
-        if self.coef_func:
-            self.coefs_[i,:] = coef_tmp.mean(axis=0)
+        if self.coef_func:            
+            self.coefs_[i,:] = coef_tmp[1,:]
 
         if self.explainer:
             self.shap_results_[i] = shap.Explanation(shap_vals,
