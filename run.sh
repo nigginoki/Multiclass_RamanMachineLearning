@@ -118,9 +118,7 @@ do
                 -f "$PREP_OUT" -o "$TREE_DIR" \
                 -s "${SCORING[@]}" -t $N_TRIALS \
                 -k $N_FOLDS -j $N_CORES \
-                --tree-alpha "${DT_ALPHA[@]}" \
-                --rf-feature-sample "${RF_FEATURE_SAMPLE[@]}" \
-                --gbdt-learning-rate "${GBDT_LEARNING_RATE[@]}"
+                --mlp "${MLP[@]}" \
                 
         elif [ "${REPLY}" == "all" ]
         then
