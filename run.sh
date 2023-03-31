@@ -6,7 +6,7 @@ read -rp "Press Enter to continue..."
 
 # For bash linter in vscode:
 # shellcheck source=./raman_ml.conf 
-source ./raman_ml_HL_multi.conf
+source ./raman_ml.conf
 # shellcheck source=/dev/null
 source $CONDA_DIR/etc/profile.d/conda.sh
 

@@ -10,7 +10,6 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from sklearn.tree import DecisionTreeClassifier, export_graphviz
 from lightgbm import LGBMClassifier
 from sklearn.neural_network import MLPClassifier
 
@@ -63,7 +62,7 @@ def parse_args():
     parser.add_argument("-k", "--folds", metavar="INT", type=int, action="store",
                         help="Number of folds for crossvalidation.", default=5)
     parser.add_argument("-j", "--jobs", metavar="INT", type=int, action="store",
-                        help="Number of parallel jobs. Set as -1 to use all available processors", default=1)
+                        help="Number of parallel jobs. Set as -1 to use all available processors", default=20)
     parser.add_argument("--mlp", metavar=("min", "max", "n steps"), type=int_float, nargs=3, action="store", 
                         help="Used to set the range of alpha values for pruning of multi layer perception using numpy.logspace.", 
                         default=[-2, 2, 5])
@@ -76,9 +75,8 @@ def parse_args():
 
     return args
 
-
 if __name__ == "__main__":
-    logger.info("Classification with further models")
+    logger.info("Classification with other models")
     args = parse_args()
 
     path_in = Path(args.file)
@@ -111,10 +109,10 @@ if __name__ == "__main__":
         logger.debug("Creating output directory")
         os.makedirs(more_path_out)
 
-    clf = MLPClassifier(random_state=653)
+    clf = MLPClassifier(random_state=653, max_iter = 500)
 
     param_grid = {
-        "ccp_alpha": np.logspace(args.mlp[0],
+        "alpha": np.logspace(args.mlp[0],
                                  args.mlp[1],
                                  args.mlp[2])
     }
@@ -130,13 +128,7 @@ if __name__ == "__main__":
                         n_jobs=args.jobs
                         ).fit(X, y)
 
-    cv.to_csv(tree_path_out)
-    export_graphviz(cv.estimator_, 
-                    out_file=str(more_path_out / "MLP.dot"), 
-                    feature_names=wns,  
-                    class_names=y_key,  
-                    filled=True, rounded=True,  
-                    special_characters=True,
-                    leaves_parallel=True)
+    cv.to_csv(more_path_out)
     
     logger.info("Cross validation complete")
+
