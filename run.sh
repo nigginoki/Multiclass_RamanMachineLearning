@@ -6,7 +6,10 @@ read -rp "Press Enter to continue..."
 
 # For bash linter in vscode:
 # shellcheck source=./raman_ml.conf 
-source ./raman_ml.conf
+#source ./SKII.conf
+#source ./database.conf
+source ./raman_ml_HL_multi.conf
+
 # shellcheck source=/dev/null
 source $CONDA_DIR/etc/profile.d/conda.sh
 
@@ -59,9 +62,10 @@ do
         then
             # Create dataset from individual spectra
             python ./src/01_create_dataset.py \
-            -d $DIR1 $DIR2 $DIR3 $DIR4\
-            -l $LAB1 $LAB2 $LAB3 $LAB4\
+            -d $DIR1 \
+            -l $LAB1 \
             -o "$DATASET_OUT"
+            
 
         elif [ "${REPLY}" == 2 ]
         then
