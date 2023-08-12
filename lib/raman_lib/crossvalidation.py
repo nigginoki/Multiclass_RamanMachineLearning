@@ -125,7 +125,9 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
         if self.do_gs:
             cv_logger.debug("Creating arrays for grid search results")
             self.param_results_ = defaultdict(list)
-                        
+            
+            #print("self.param_results_: ", self.param_results_.shape)
+            
             self.cv_results_ = defaultdict(list)
             for param in ParameterGrid(self.param_grid):
                 for name, val in param.items():
@@ -140,6 +142,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
             cv_logger.debug("Creating array for model coefficients")
             self.coefs_ = np.zeros((self.n_trials, X.shape[1]))
 
+            print("self.coefs_:",self.coefs_.shape)
         if self.explainer:
             cv_logger.debug("Creating array for SHAP explanations")
             self.shap_results_ = np.empty(self.n_trials, dtype=object)
@@ -205,6 +208,7 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
 
     def _store_ct_results(self, X, y, i, outer_cv, dummy_results, ct_results_tmp):
+        #num_classes = len(np.unique(y))
 
         if self.multi_score:
             for score in self.scoring:
@@ -219,7 +223,9 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
         if self.coef_func:
             coef_tmp = np.zeros((self.n_folds, X.shape[1]))
+            #coef_tmp = np.zeros((num_classes, self.n_folds, X.shape[1]))
 
+            #print("coef_tmp:",coef_tmp.shape)
         if self.explainer:
             shap_vals = np.zeros((len(y), X.shape[1]))
             shap_base_vals = np.zeros(len(y))
@@ -235,7 +241,11 @@ class CrossValidator(BaseEstimator, MetaEstimatorMixin):
 
             if self.coef_func:
                 cv_logger.debug("Storing coefficients")
+                #print("self.coef_func(current_estimator)", self.coef_func(current_estimator).shape)
                 coef_tmp= self.coef_func(current_estimator).T
+                #print("coef_tmp:",coef_tmp.shape)
+                #print("coef_tmp[j,:]:",coef_tmp[j,:].shape)
+                #print("coef_tmp[j:]:",coef_tmp[j,:].shape)
 
             cv_logger.debug("Storing predictions")
             y_pred = current_estimator.predict(X_test)

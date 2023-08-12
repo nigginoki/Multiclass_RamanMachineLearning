@@ -109,86 +109,14 @@ if __name__ == "__main__":
     y, y_key = pd.factorize(y)
     logger.info("Data import complete")
 
+    print("Number of classes: ", len(np.unique(y)))
+    
     if isinstance(args.scoring, str):
         refit = True
     else:
         refit = args.scoring[0]
 
-    # Logistic Regression with l1 term
-
-    logger.info("Classifier 1: Logistic Regression with l1 Regularization")
-    lg_l1_path_out = path_out / "logreg_l1"
-
-    if not os.path.exists(lg_l1_path_out):
-        logger.debug("Creating output directory")
-        os.makedirs(lg_l1_path_out)
-
-    clf = Pipeline([
-        ("scaler", StandardScaler()),
-        ("logreg", LogisticRegression(solver="liblinear",
-                                      penalty="l1",
-                                      max_iter=1000,
-                                      random_state=41))
-    ])
-
-    param_grid = {
-        "logreg__C": np.logspace(args.logreg_l1_c[0],
-                                 args.logreg_l1_c[1],
-                                 args.logreg_l1_c[2])
-    }
-
-    logger.info("Starting cross validation")
-    cv = CrossValidator(clf,
-                        param_grid,
-                        scoring=args.scoring,
-                        refit=refit,
-                        coef_func=lambda x: x[1].coef_,
-                        feature_names=wns,
-                        n_folds=args.folds,
-                        n_trials=args.trials,
-                        n_jobs=args.jobs
-                        ).fit(X, y)
-
-    cv.to_csv(lg_l1_path_out)
-    logger.info("Cross validation complete")
-
-    # Logistic Regression with l2 term
-
-    logger.info("Classifier 2: Logistic Regression with l2 Regularization")
-    lg_l2_path_out = path_out / "logreg_l2"
-
-    if not os.path.exists(lg_l2_path_out):
-        logger.debug("Creating output directory")
-        os.makedirs(lg_l2_path_out)
-
-    clf = Pipeline([
-        ("scaler", StandardScaler()),
-        ("logreg", LogisticRegression(solver="liblinear",
-                                      penalty="l2",
-                                      random_state=51,
-                                      max_iter=1000))
-    ])
-
-    param_grid = {
-        "logreg__C": np.logspace(args.logreg_l2_c[0],
-                                 args.logreg_l2_c[1],
-                                 args.logreg_l2_c[2])
-    }
-
-    logger.info("Starting cross validation")
-    cv = CrossValidator(clf,
-                        param_grid,
-                        scoring=args.scoring,
-                        refit=refit,
-                        coef_func=lambda x: x[1].coef_,
-                        feature_names=wns,
-                        n_folds=args.folds,
-                        n_trials=args.trials,
-                        n_jobs=args.jobs
-                        ).fit(X, y)
-
-    cv.to_csv(lg_l2_path_out)
-    logger.info("Cross validation complete")
+    
 
 
     # Linear SVM with l1 term
@@ -202,7 +130,7 @@ if __name__ == "__main__":
 
     clf = Pipeline([
         ("scaler", StandardScaler()),
-        ("svm", LinearSVC(penalty="l1", dual=False, max_iter=10000))
+        ("svm", LinearSVC(penalty="l1", dual=False, max_iter=10000, multi_class="ovr"))
     ])
 
     param_grid = {
@@ -237,7 +165,7 @@ if __name__ == "__main__":
 
     clf = Pipeline([
         ("scaler", StandardScaler()),
-        ("svm", LinearSVC(penalty="l2", max_iter=5000))
+        ("svm", LinearSVC(penalty="l2", max_iter=10000, multi_class="ovr"))
     ])
 
     param_grid = {

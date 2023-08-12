@@ -26,9 +26,10 @@ def load_data(path):
     else:
         data = []
         labels = []
-
-        for dir in os.listdir(path):
-            print(dir)
+        
+        for dir in sorted(os.listdir(path), reverse=True):
+        print(dir)
+            
             for file in os.listdir(os.path.join(path, dir)):
                 filepath = os.path.join(path, dir, file)
 
@@ -55,7 +56,6 @@ def load_data(path):
         data.insert(0, "label", labels)
 
     return data
-
 
 def int_float(s):
     try:

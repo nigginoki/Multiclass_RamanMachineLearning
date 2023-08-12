@@ -23,7 +23,7 @@ do
     echo "  4: Run LDA with dimensionality reduction"
     echo "  5: Run regularized linear models"
     echo "  6: Run decision-tree-based models"
-    echo "  7: Run multiclass classification models"
+    echo "  7: Run artificial neural network"
     echo "all: Run steps 1-7"
     echo "or enter 'exit' to quit"
 
@@ -57,13 +57,14 @@ do
         LDA_DIR="$RESULT_DIR/lda_dim_reduction/"
         REG_DIR="$RESULT_DIR/regularized_models/"
         TREE_DIR="$RESULT_DIR/tree_based_models/"
+        ANN_DIR="$RESULT_DIR/artificial_neural_network/"
 
         if [ "${REPLY}" == 1 ]
         then
             # Create dataset from individual spectra
             python ./src/01_create_dataset.py \
-            -d $DIR1 \
-            -l $LAB1 \
+            -d $DIR1 $DIR2 $DIR3 $DIR4\
+            -l $LAB1 $LAB2 $LAB3 $LAB4\
             -o "$DATASET_OUT"
             
 
@@ -118,11 +119,11 @@ do
                 
         elif [ "${REPLY}" == 7 ]
         then
-            python ./src/07_more_models.py \
+            python ./src/07_neural_network.py \
                 -f "$PREP_OUT" -o "$TREE_DIR" \
                 -s "${SCORING[@]}" -t $N_TRIALS \
                 -k $N_FOLDS -j $N_CORES \
-                --mlp "${MLP[@]}" \
+                
                 
         elif [ "${REPLY}" == "all" ]
         then
@@ -175,7 +176,13 @@ do
                 --tree-alpha "${DT_ALPHA[@]}" \
                 --rf-feature-sample "${RF_FEATURE_SAMPLE[@]}" \
                 --gbdt-learning-rate "${GBDT_LEARNING_RATE[@]}"
-
+                
+            # ANN model
+            python ./src/07_neural_network.py \
+                -f "$PREP_OUT" -o "$TREE_DIR" \
+                -s "${SCORING[@]}" -t $N_TRIALS \
+                -k $N_FOLDS -j $N_CORES \
+                
         else
             echo "Please choose one of the options from the list."
         fi
